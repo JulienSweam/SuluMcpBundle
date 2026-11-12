@@ -115,7 +115,7 @@ final class PageUpdateHashTest extends TestCase
         $capturedData = null;
         $bus = $this->createMock(MessageBusInterface::class);
         $bus->expects(self::once())->method('dispatch')->willReturnCallback(
-            static function (Envelope $envelope) use (&$capturedData, $page, $draft, $changeBeforeCheck, $hasher, $attributes): Envelope {
+            static function(Envelope $envelope) use (&$capturedData, $page, $draft, $changeBeforeCheck, $hasher, $attributes): Envelope {
                 $message = $envelope->getMessage();
                 self::assertInstanceOf(ModifyPageMessage::class, $message);
                 $capturedData = $message->getData();

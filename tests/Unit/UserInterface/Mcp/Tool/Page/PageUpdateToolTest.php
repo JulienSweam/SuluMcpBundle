@@ -859,14 +859,7 @@ final class PageUpdateToolTest extends TestCase
             new AuditableHasher(),
         );
 
-        // Set up the read side so we reach the content branch
-        $existingPage = new Page('uuid-1');
-        $existingPage->setWebspaceKey('example');
-        $this->pageRepository->getOneBy(Argument::cetera())->willReturn($existingPage);
-        $currentDimensionContent = new PageDimensionContent(new Page());
-        $currentDimensionContent->setLocale('en');
-        $this->contentManager->resolve(Argument::cetera())->willReturn($currentDimensionContent);
-        $this->contentManager->normalize(Argument::cetera())->willReturn(['template' => 'default', 'title' => 'Title']);
+        $this->setUpReadModifyWrite('uuid-1', 'en', ['template' => 'default', 'title' => 'Title']);
 
         $this->messageBus->dispatch(Argument::cetera())->shouldNotBeCalled();
 
@@ -936,14 +929,7 @@ final class PageUpdateToolTest extends TestCase
         $mockPage = new Page('uuid-1');
         $mockPage->setWebspaceKey('example');
 
-        $existingPage = new Page('uuid-1');
-        $existingPage->setWebspaceKey('example');
-        $this->pageRepository->getOneBy(Argument::cetera())->willReturn($existingPage);
-
-        $currentDimensionContent = new PageDimensionContent(new Page());
-        $currentDimensionContent->setLocale('en');
-        $this->contentManager->resolve(Argument::cetera())->willReturn($currentDimensionContent);
-        $this->contentManager->normalize(Argument::cetera())->willReturn(['template' => 'default']);
+        $this->setUpReadModifyWrite('uuid-1', 'en', ['template' => 'default']);
 
         $capturedEnvelope = null;
         $this->messageBus->dispatch(Argument::that(function(Envelope $envelope) use (&$capturedEnvelope): bool {
