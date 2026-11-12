@@ -23,6 +23,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Sulu\Bundle\AdminBundle\Metadata\FormMetadata\FieldMetadata;
 use Sulu\Bundle\AdminBundle\Metadata\FormMetadata\FormMetadata;
 use Sulu\Bundle\AdminBundle\Metadata\FormMetadata\TypedFormMetadata;
+use Sulu\Component\Hash\AuditableHasher;
 use Sulu\Component\Security\Authorization\PermissionTypes;
 use Sulu\Component\Webspace\Manager\WebspaceManagerInterface;
 use Sulu\Component\Webspace\Navigation;
@@ -111,6 +112,7 @@ final class PageUpdateToolTest extends TestCase
             $this->adminLinkGenerator,
             $this->permissionChecker,
             $this->webspaceManager->reveal(),
+            new AuditableHasher(),
         );
     }
 
@@ -142,6 +144,10 @@ final class PageUpdateToolTest extends TestCase
     {
         $existingPage = new Page($uuid);
         $existingPage->setWebspaceKey('example');
+        $draftContent = $existingPage->createDimensionContent();
+        $draftContent->setLocale($locale);
+        $draftContent->setChanged(new \DateTimeImmutable('@1000'));
+        $existingPage->addDimensionContent($draftContent);
 
         $this->pageRepository->getOneBy(
             [
@@ -602,6 +608,7 @@ final class PageUpdateToolTest extends TestCase
             $this->adminLinkGenerator,
             $this->permissionChecker,
             $this->webspaceManager->reveal(),
+            new AuditableHasher(),
         );
 
         $mockPage = new Page('uuid-1');
@@ -849,6 +856,7 @@ final class PageUpdateToolTest extends TestCase
             $this->adminLinkGenerator,
             $this->permissionChecker,
             $this->webspaceManager->reveal(),
+            new AuditableHasher(),
         );
 
         // Set up the read side so we reach the content branch

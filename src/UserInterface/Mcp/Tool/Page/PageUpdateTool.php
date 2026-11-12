@@ -18,9 +18,11 @@ use Mcp\Capability\Attribute\Schema;
 use Mcp\Exception\ToolCallException;
 use Mcp\Schema\ToolAnnotations;
 use Sulu\Bundle\AdminBundle\Application\BlockIdGenerator\BlockIdGeneratorInterface;
+use Sulu\Component\Hash\HasherInterface;
 use Sulu\Component\Security\Authorization\PermissionTypes;
 use Sulu\Component\Webspace\Manager\WebspaceManagerInterface;
 use Sulu\Content\Application\ContentManager\ContentManagerInterface;
+use Sulu\Content\Domain\Model\DimensionContentCollection;
 use Sulu\Content\Domain\Model\DimensionContentInterface;
 use Sulu\Mcp\Application\AdminLink\AdminLinkGeneratorInterface;
 use Sulu\Mcp\Application\Content\BlockDataNormalizerTrait;
@@ -69,6 +71,7 @@ class PageUpdateTool
         private readonly AdminLinkGeneratorInterface $adminLinkGenerator,
         private readonly ToolPermissionCheckerInterface $permissionChecker,
         private readonly WebspaceManagerInterface $webspaceManager,
+        private readonly HasherInterface $hasher,
     ) {
         $this->messageBus = $messageBus;
     }
@@ -158,6 +161,23 @@ class PageUpdateTool
             // source content, only availableLocales, ghostLocale and the webspace default template.
             $currentData = $createsLocale ? [] : $this->contentManager->normalize($currentDimensionContent);
 
+            // The merged content hash can differ from the persisted locale's draft hash.
+            $draftHash = null;
+            if (!$createsLocale) {
+                $attributes = ['locale' => $locale, 'stage' => DimensionContentInterface::STAGE_DRAFT];
+                $draftContent = (new DimensionContentCollection(
+                    $page->getDimensionContents(),
+                    $attributes,
+                    $page->createDimensionContent()::class,
+                ))->getDimensionContent($attributes);
+
+                if (!$draftContent instanceof DimensionContentInterface) {
+                    throw new \RuntimeException('Expected persisted draft content for the requested locale.');
+                }
+
+                $draftHash = $this->hasher->hash($draftContent);
+            }
+
             // Trusted template: the `template` arg, else the current one. content/excerpt/seo
             // below must not smuggle a different value past this point.
             $currentTemplateKey = \is_string($currentData['template'] ?? null) ? $currentData['template'] : null;
@@ -227,6 +247,12 @@ class PageUpdateTool
             }
 
             $data = $this->applyShadow($data, $shadowOn, $shadowLocale);
+
+            if (null === $draftHash) {
+                unset($data['_hash']);
+            } else {
+                $data['_hash'] = $draftHash;
+            }
 
             $message = new ModifyPageMessage(['uuid' => $uuid], $data);
 

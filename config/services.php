@@ -360,7 +360,8 @@ return static function(ContainerConfigurator $container): void {
 
     // Page write tools
     $services->set(PageCreateTool::class);
-    $services->set(PageUpdateTool::class);
+    $services->set(PageUpdateTool::class)
+        ->arg('$hasher', new Reference('sulu_hash.auditable_hasher'));
     $services->set(PageMoveTool::class);
     $services->set(PageReorderTool::class);
 
